@@ -262,7 +262,7 @@ async def register_commands():
         sender_id = event.sender_id
         message_text = event.text or ""
         
-        if not message_text or sender_id == event.client.get_me().id:
+        if not message_text or sender_id == (await event.client.get_me()).id:
             return
         
         if not await flirt_manager.should_reply(sender_id):
