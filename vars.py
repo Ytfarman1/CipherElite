@@ -21,6 +21,7 @@ LOG_CHAT_ID = int(os.getenv("LOG_CHAT_ID", "0"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", None)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", None)
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)   
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")  
 
