@@ -278,6 +278,47 @@ async def register_commands():
     client.remove_event_handler(private_flirt_handler)
     client.add_event_handler(private_flirt_handler, events.NewMessage(incoming=True, func=lambda e: e.is_private))
 
+    # ----- 1b. ग्रुप हैंडलर: सिर्फ़ reply/mention पर ही ट्रिगर होता है -----
+    # जानबूझकर ग्रुप के हर मैसेज पर नहीं चलता — सिर्फ़ वही व्यक्ति जवाब पाता है
+    # जिसने खुद bot को reply किया या mention/tag किया (यानी consent के साथ)।
+    async def group_flirt_handler(event):
+        if not flirt_manager or not flirt_manager.settings.get("auto_reply", False):
+            return
+
+        sender_id = event.sender_id
+        message_text = event.text or ""
+        me_id = (await event.client.get_me()).id
+
+        if not message_text or sender_id == me_id:
+            return
+
+        # Only trigger if this message replies to one of the bot's own
+        # messages, or explicitly mentions/tags the bot.
+        is_reply_to_bot = False
+        if event.is_reply:
+            replied = await event.get_reply_message()
+            if replied and replied.sender_id == me_id:
+                is_reply_to_bot = True
+
+        is_mentioned = bool(getattr(event.message, "mentioned", False))
+
+        if not (is_reply_to_bot or is_mentioned):
+            return
+
+        if not await flirt_manager.should_reply(sender_id):
+            return
+
+        try:
+            reply = await flirt_manager.generate_flirty_reply(message_text)
+            if flirt_manager.settings.get("response_delay", 0) > 0:
+                await asyncio.sleep(flirt_manager.settings["response_delay"])
+            await event.reply(reply)
+        except Exception as e:
+            logger.error(f"Group Flirt Handler Error: {e}")
+
+    client.remove_event_handler(group_flirt_handler)
+    client.add_event_handler(group_flirt_handler, events.NewMessage(incoming=True, func=lambda e: not e.is_private))
+
     # ----- 2. सारे कमांड हैंडलर -----
     async def cmd_toggle(event): await cmd_flirt_toggle(event)
     client.remove_event_handler(cmd_toggle)
