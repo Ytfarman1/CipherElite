@@ -22,16 +22,9 @@ owner_user_id = None
 owner_display_name = None
 
 def load_database():
-    """Load assistant database from JSON file"""
-    if DB_PATH.exists():
-        try:
-            with open(DB_PATH, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading assistant database: {e}")
-    
-    # Default database structure
-    return {
+    """Load assistant database safely"""
+
+    default_db = {
         "assistant_enabled": False,
         "users": [],
         "user_message_map": {},
@@ -40,6 +33,31 @@ def load_database():
             "total_replies": 0
         }
     }
+
+    if DB_PATH.exists():
+        try:
+            with open(DB_PATH, "r") as f:
+                db = json.load(f)
+
+            if not isinstance(db, dict):
+                db = {}
+
+            db.setdefault("assistant_enabled", False)
+            db.setdefault("users", [])
+            db.setdefault("user_message_map", {})
+            db.setdefault("stats", {})
+            db["stats"].setdefault("total_messages", 0)
+            db["stats"].setdefault("total_replies", 0)
+
+            save_database(db)
+            return db
+
+        except Exception as e:
+            print(f"Error loading assistant database: {e}")
+
+    save_database(default_db)
+    return default_db
+
 
 def save_database(db):
     """Save assistant database to JSON file"""
@@ -182,7 +200,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 "<i>More commands coming soon...</i>"
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
+            try:
             await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
         
         elif menu == "assistant":
             text = (
@@ -209,7 +230,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                     [Button.inline("◀️ Back", b"menu_main")]
                 ]
             
+            try:
             await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
         
         elif menu == "stats":
             stats = get_stats()
@@ -224,7 +248,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 f"<i>Statistics updated in real-time</i>"
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
+            try:
             await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
         
         elif menu == "settings":
             text = (
@@ -238,7 +265,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 "<i>More features in development...</i>"
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
+            try:
             await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
         
         elif menu == "main":
             # Back to main menu
@@ -263,7 +293,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 [Button.url("💬 Support", "https://t.me/thanosprosss")]
             ]
             
+            try:
             await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
     
     # -------------------------------------------------------------------------
     # 3. ASSISTANT TOGGLE HANDLER
@@ -307,7 +340,10 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 [Button.inline("◀️ Back", b"menu_main")]
             ]
         
-        await event.edit(text, buttons=buttons, parse_mode='html')
+        try:
+            await event.edit(text, buttons=buttons, parse_mode='html')
+        except Exception:
+            pass
     
     # -------------------------------------------------------------------------
     # 4. ASSISTANT COMMAND HANDLER
