@@ -25,4 +25,5 @@ class Config:
     BRANCH = BRANCH
     UPSTREAM_REPO = "https://github.com/rishabhops/CipherElite"
 
-
+    # AI Settings
+    OPENAI_API_KEY = OPENAI_API_KEY
