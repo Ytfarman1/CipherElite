@@ -145,6 +145,11 @@ def rishabh_help(func=None):
 
     # Magic logic to allow both @rishabh_help and @rishabh_help()
     if func is None:
-        return decorator
-    else:
-        return decorator(func)
+    return decorator
+else:
+    return decorator(func)
+
+
+# Compatibility for old plugins
+def sudo_only(func=None):
+    return rishabh(func)
