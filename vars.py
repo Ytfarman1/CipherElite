@@ -21,7 +21,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)   # यह पहले से डाला था न?
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")  # <--- यह नई वाली लाइन डालें
 # Image URLs
-PMPERMIT_PIC = os.getenv("PMPERMIT_PIC", "https://files.catbox.moe/tocisn.png")  
+PMPERMIT_PIC = os.getenv("PMPERMIT_PIC", "https://i.ibb.co/mVmNSgz6/x.jpg")  
 ALIVE_PIC = os.getenv("ALIVE_PIC", "https://files.catbox.moe/tocisn.png") 
 PING_PIC = os.getenv("PING_PIC", "https://files.catbox.moe/tocisn.png")
 
