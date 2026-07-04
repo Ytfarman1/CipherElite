@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
 # api Configuration
@@ -17,11 +16,14 @@ ELITE_BOT_USERNAME = os.getenv("ELITE_BOT_USERNAME", "@NKDKOREANBOT")
 # Access Control
 SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "5528613826").split(",") if x.strip()]
 LOG_CHAT_ID = int(os.getenv("LOG_CHAT_ID", "0"))
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", None)
+
+# 🔥 GEMINI FIXED LINE (Baaki variables ki tarah standard format)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", None)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
-OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)   # यह पहले से डाला था न?
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")  # <--- यह नई वाली लाइन डालें
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)   
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")  
+
 # Image URLs
 PMPERMIT_PIC = os.getenv("PMPERMIT_PIC", "https://i.ibb.co/mVmNSgz6/x.jpg")  
 ALIVE_PIC = os.getenv("ALIVE_PIC", "https://files.catbox.moe/tocisn.png") 
@@ -34,7 +36,7 @@ ALIVE_NAME = os.getenv("ALIVE_NAME", "Crazyhub")
 UPSTREAM_REPO = os.getenv("UPSTREAM_REPO", "https://github.com/YTFarman9758/CipherElite")
 BRANCH = os.getenv("BRANCH", "elite")
 
-# for  debugging dont edit this
+# for debugging dont edit this
 if API_ID == 0:
     print("Warning: API_ID is not set. Please update .env with a valid API_ID.")
 if API_HASH == "INVALID_API_HASH":
