@@ -68,33 +68,33 @@ class AutoFlirtManager:
         self.settings = FLIRT_SETTINGS.copy()
         
     async def generate_flirty_reply(self, message_text: str) -> str:
-        """Generate flirty reply using OpenAI v1.0+ OR Smart Fallback"""
-        try:
-            # 1️⃣ अगर OpenAI उपलब्ध है और API Key सेट है तो AI का उपयोग करें
-            if openai and hasattr(Config, 'OPENAI_API_KEY') and Config.OPENAI_API_KEY:
-                # 🔥 OpenAI v1.0+ का नया तरीका
-                client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
-                style = self.settings["style"]
-                prompt = FLIRT_PROMPTS[style].format(msg=message_text)
-                
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a friendly flirty chat bot."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=50,
-                )
-                reply = response.choices[0].message.content.strip()
-                return reply
-            else:
-                # 2️⃣ अगर OpenAI नहीं है तो स्मार्ट फॉलबैक इस्तेमाल करें
-                return self.get_smart_fallback_reply(message_text)
-            
-        except Exception as e:
-            logger.error(f"Error generating flirty reply: {e}")
+    """Generate flirty reply using OpenAI v1.0+ OR Smart Fallback"""
+    try:
+        # 1. 가상의 OpenAI API를 이용하여 AI의 닉네임을 생성합니다.
+        if openai and hasattr(Config, 'OPENAI_API_KEY') and Config.OPENAI_API_KEY:
+            # OpenAI v1.0+ API를 사용하여 닉네임을 생성합니다.
+            client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
+            style = self.settings["style"]
+            prompt = FLIRT_PROMPTS[style].format(msg=message_text)
+
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a friendly flirty chat bot."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.7,
+                max_tokens=50,
+            )
+            reply = response.choices[0].message.content.strip()
+            return reply
+        else:
+            # 2. 가상의 OpenAI API를 이용하여 닉네임을 생성합니다.
             return self.get_smart_fallback_reply(message_text)
+
+    except Exception as e:
+        logger.error(f"Error generating flirty reply: {e}")
+        return self.get_smart_fallback_reply(message_text)
     
     # ✨ SMart Fallback: Context समझकर जवाब देता है (No API Needed)
     def get_smart_fallback_reply(self, message_text: str) -> str:
