@@ -73,9 +73,9 @@ Edit `plugins/auto_flirt.py`:
 
 ```python
 FLIRT_SETTINGS = {
-    "enabled": True,           # Master on/off
+    "enabled": false,           # Master on/off
     "style": "playful",        # Default style
-    "auto_reply": True,        # Auto reply enabled
+    "auto_reply": false,        # Auto reply enabled
     "blacklist": [],           # Blocked users
     "response_delay": 0,       # Delay in seconds
 }
