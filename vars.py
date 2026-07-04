@@ -18,7 +18,8 @@ ELITE_BOT_USERNAME = os.getenv("ELITE_BOT_USERNAME", "@NKDKOREANBOT")
 SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "5528613826").split(",") if x.strip()]
 LOG_CHAT_ID = int(os.getenv("LOG_CHAT_ID", "0"))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
-
+OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", None)   # यह पहले से डाला था न?
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")  # <--- यह नई वाली लाइन डालें
 # Image URLs
 PMPERMIT_PIC = os.getenv("PMPERMIT_PIC", "https://files.catbox.moe/tocisn.png")  
 ALIVE_PIC = os.getenv("ALIVE_PIC", "https://files.catbox.moe/tocisn.png") 
