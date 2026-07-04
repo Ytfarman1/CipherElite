@@ -27,5 +27,5 @@ class Config:
 
     # AI Settings
     OPENAI_API_KEY = OPENAI_API_KEY
-    GEMINI_API_KEY = "AIzaSy_Aapki_Key_Yahan_Hai..."
+    GEMINI_API_KEY = GEMINI_API_KEY
     
