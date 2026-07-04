@@ -15,7 +15,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "INVALID_BOT_TOKEN")
 ELITE_BOT_USERNAME = os.getenv("ELITE_BOT_USERNAME", "@NKDKOREANBOT")
 
 # Access Control
-SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "5470956337").split(",") if x.strip()]
+SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "5528613826").split(",") if x.strip()]
 LOG_CHAT_ID = int(os.getenv("LOG_CHAT_ID", "0"))
 
 # Image URLs
@@ -24,7 +24,7 @@ ALIVE_PIC = os.getenv("ALIVE_PIC", "https://files.catbox.moe/tocisn.png")
 PING_PIC = os.getenv("PING_PIC", "https://files.catbox.moe/tocisn.png")
 
 # alive name
-ALIVE_NAME = os.getenv("ALIVE_NAME", "rishabh")  
+ALIVE_NAME = os.getenv("ALIVE_NAME", "Crazyhub")  
 
 # Update Configuration
 UPSTREAM_REPO = os.getenv("UPSTREAM_REPO", "https://github.com/YTFarman9758/CipherElite")
