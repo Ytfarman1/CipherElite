@@ -1,6 +1,6 @@
 """
-Auto Chat Flirting Plugin - ULTIMATE FIXED VERSION
-✅ OpenAI v1.0+ Support
+Auto Chat Flirting Plugin - GEMINI EDITION
+✅ Google Gemini (Free & Fast) Support
 ✅ Smart Context-Aware Fallback (No API needed)
 ✅ Fixed 'coroutine' error
 ✅ 100% Working with install.py
@@ -11,16 +11,20 @@ import logging
 import random
 from telethon import events
 
-# OpenAI optional - v1.0+ compatible
+# Gemini Support
 try:
-    import openai
+    import google.generativeai as genai
 except ImportError:
-    openai = None
+    genai = None
 
 from config.config import Config
 from utils.decorators import sudo_only
 
 logger = logging.getLogger(__name__)
+
+# ------------------------ API SETTINGS ------------------------
+# Apni Gemini API key yahan daalein (Double quotes ke andar)
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE"
 
 # ------------------------ SETTINGS ------------------------
 
@@ -36,25 +40,25 @@ FLIRT_SETTINGS = {
 
 FLIRT_PROMPTS = {
     "playful": """You are a flirty, playful, and witty chat bot. 
-    Respond to this message with a short, cheeky, and fun flirty reply (max 100 chars).
+    Respond to this message with a short, cheeky, and fun flirty reply in Hinglish (max 100 chars).
     Keep it light-hearted and teasing. Use emojis if appropriate.
     Message: {msg}
     Reply:""",
     
     "romantic": """You are a romantic and charming chat bot.
-    Respond to this message with a sweet, romantic flirty reply (max 100 chars).
+    Respond to this message with a sweet, romantic flirty reply in Hinglish (max 100 chars).
     Be genuine and heartfelt. Use emojis if appropriate.
     Message: {msg}
     Reply:""",
     
     "confident": """You are a confident and bold chat bot.
-    Respond to this message with a confident and flirty reply (max 100 chars).
+    Respond to this message with a confident and flirty reply in Hinglish (max 100 chars).
     Be bold but respectful. Use emojis if appropriate.
     Message: {msg}
     Reply:""",
     
     "sweet": """You are a cute and sweet chat bot.
-    Respond to this message with an adorable and flirty reply (max 100 chars).
+    Respond to this message with an adorable and flirty reply in Hinglish (max 100 chars).
     Be wholesome and kind. Use emojis if appropriate.
     Message: {msg}
     Reply:""",
@@ -66,38 +70,40 @@ class AutoFlirtManager:
     def __init__(self, client):
         self.client = client
         self.settings = FLIRT_SETTINGS.copy()
+        self.model = None
+        
+        # Initialize Gemini Setup
+        if genai and GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
+            genai.configure(api_key=GEMINI_API_KEY)
+            # gemini-1.5-flash is extremely fast and suitable for bots
+            self.model = genai.GenerativeModel('gemini-1.5-flash')
         
     async def generate_flirty_reply(self, message_text: str) -> str:
-        """Generate flirty reply using OpenAI v1.0+ OR Smart Fallback"""
+        """Generate flirty reply using Gemini OR Smart Fallback"""
         try:
-            if openai and hasattr(Config, 'OPENAI_API_KEY') and Config.OPENAI_API_KEY:
-                client = openai.OpenAI(api_key=Config.OPENAI_API_KEY)
+            if self.model:
                 style = self.settings["style"]
                 prompt = FLIRT_PROMPTS[style].format(msg=message_text)
 
-                response = client.chat.completions.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {"role": "system", "content": "You are a friendly flirty chat bot."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=0.7,
-                    max_tokens=50,
-                )
-                reply = response.choices[0].message.content.strip()
-                return reply
+                # Generate content async is not natively supported in this old SDK wrapper, using run_in_executor to avoid blocking
+                loop = asyncio.get_event_loop()
+                response = await loop.run_in_executor(None, self.model.generate_content, prompt)
+                
+                if response and response.text:
+                    return response.text.strip()
+                else:
+                    return self.get_smart_fallback_reply(message_text)
             else:
                 return self.get_smart_fallback_reply(message_text)
 
         except Exception as e:
-            logger.error(f"Error generating flirty reply: {e}")
+            logger.error(f"Error generating flirty reply with Gemini: {e}")
             return self.get_smart_fallback_reply(message_text)
     
-    # ✨ SMart Fallback: Context समझकर जवाब देता है (No API Needed)
+    # ✨ SMart Fallback: Context samajhkar jawab deta hai (No API Needed)
     def get_smart_fallback_reply(self, message_text: str) -> str:
         text = message_text.lower()
         
-        # 1. नाम पूछने पर
         if any(word in text for word in ["nam", "name", "naam", "apna", "tumhara", "your name", "kya naam"]):
             return random.choice([
                 "Mera naam hai 'Aapka Crush' 😉", 
@@ -106,7 +112,6 @@ class AutoFlirtManager:
                 "Mera naam Flirty Bot, aapka? 💕"
             ])
         
-        # 2. हालचाल पूछने पर
         elif any(word in text for word in ["kaise", "how are", "kya hal", "kese", "kesi", "kya haal"]):
             return random.choice([
                 "Aapko dekh ke toh bahut achha lag raha hai 😘",
@@ -115,7 +120,6 @@ class AutoFlirtManager:
                 "Abhi toh aapka message aaya, aur achha ho gaya 😏"
             ])
         
-        # 3. सवाल पूछने पर (What / Why / Kya)
         elif any(word in text for word in ["kya", "what", "why", "kyu", "kaun", "who"]):
             return random.choice([
                 "Kya kya soch rahe ho aap mere baare mein? 😏",
@@ -124,7 +128,6 @@ class AutoFlirtManager:
                 "Itna sawaal? Pehle date pe chalein? 😂"
             ])
         
-        # 4. Greetings (Hi, Hello, Hey)
         elif any(word in text for word in ["hi", "hello", "hey", "hlo", "hola"]):
             return random.choice([
                 "Ooh, hello there! 👋",
@@ -133,7 +136,6 @@ class AutoFlirtManager:
                 "Namaste! Aap kaise ho? 😘"
             ])
         
-        # 5. अगर कुछ समझ न आए तो डिफॉल्ट
         else:
             return random.choice([
                 "Smooth talker, huh? 😏", 
@@ -218,6 +220,8 @@ async def cmd_flirt_status(event):
     whitelist_count = len([u for u, v in flirt_manager.settings["whitelist"].items() if v])
     blacklist_count = len(flirt_manager.settings["blacklist"])
     
+    api_status = "✅ Active (Gemini)" if flirt_manager.model else "⚠️ Fallback Mode (No API Key)"
+    
     status_text = f"""
 🎭 **Auto Flirt Status**
 ━━━━━━━━━━━━━━━━━━━
@@ -227,6 +231,7 @@ async def cmd_flirt_status(event):
 ⏰ Delay: {flirt_manager.settings['response_delay']}s
 ✅ Whitelisted: {whitelist_count} users
 🚫 Blacklisted: {blacklist_count} users
+🤖 Engine: {api_status}
 """
     await event.edit(status_text)
 
@@ -234,25 +239,24 @@ async def cmd_flirt_status(event):
 
 flirt_manager = None
 
-# ------------------------ FIXED: PLUGIN LOADING ------------------------
+# ------------------------ PLUGIN LOADING ------------------------
 
 def init(client_instance):
     global flirt_manager
     if not flirt_manager:
         flirt_manager = AutoFlirtManager(client_instance)
         flirt_manager.client = client_instance
-        logger.info("✅ Auto Flirt Manager Initialized")
+        logger.info("✅ Auto Flirt Manager Initialized with Gemini")
 
 async def register_commands():
     global flirt_manager
     
     if not flirt_manager:
-        logger.error("Flirt Manager initialized नहीं है!")
+        logger.error("Flirt Manager initialized nahi hai!")
         return
     
     client = flirt_manager.client
 
-    # ----- 1. प्राइवेट मैसेज हैंडलर (FIXED: await added) -----
     async def private_flirt_handler(event):
         if not flirt_manager or not flirt_manager.settings.get("auto_reply", False):
             return
@@ -260,7 +264,6 @@ async def register_commands():
         sender_id = event.sender_id
         message_text = event.text or ""
         
-        # 🔥 FIXED: 'await' डालना न भूलें (पिछली गलती ठीक हो गई)
         if not message_text or sender_id == (await event.client.get_me()).id:
             return
         
@@ -278,9 +281,6 @@ async def register_commands():
     client.remove_event_handler(private_flirt_handler)
     client.add_event_handler(private_flirt_handler, events.NewMessage(incoming=True, func=lambda e: e.is_private))
 
-    # ----- 1b. ग्रुप हैंडलर: सिर्फ़ reply/mention पर ही ट्रिगर होता है -----
-    # जानबूझकर ग्रुप के हर मैसेज पर नहीं चलता — सिर्फ़ वही व्यक्ति जवाब पाता है
-    # जिसने खुद bot को reply किया या mention/tag किया (यानी consent के साथ)।
     async def group_flirt_handler(event):
         if not flirt_manager or not flirt_manager.settings.get("auto_reply", False):
             return
@@ -292,8 +292,6 @@ async def register_commands():
         if not message_text or sender_id == me_id:
             return
 
-        # Only trigger if this message replies to one of the bot's own
-        # messages, or explicitly mentions/tags the bot.
         is_reply_to_bot = False
         if event.is_reply:
             replied = await event.get_reply_message()
@@ -319,7 +317,6 @@ async def register_commands():
     client.remove_event_handler(group_flirt_handler)
     client.add_event_handler(group_flirt_handler, events.NewMessage(incoming=True, func=lambda e: not e.is_private))
 
-    # ----- 2. सारे कमांड हैंडलर -----
     async def cmd_toggle(event): await cmd_flirt_toggle(event)
     client.remove_event_handler(cmd_toggle)
     client.add_event_handler(cmd_toggle, events.NewMessage(pattern=r"\.flirttoggle$"))
@@ -365,4 +362,4 @@ async def register_commands():
     client.remove_event_handler(cmd_blacklist_list)
     client.add_event_handler(cmd_blacklist_list, events.NewMessage(pattern=r"\.flirtblacklist list$"))
 
-    logger.info("✅ Auto Flirt: सारे हैंडलर सफलतापूर्वक रजिस्टर हो गए!")
+    logger.info("✅ Auto Flirt: Saare handlers successfully register ho gaye!")
