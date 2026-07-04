@@ -1,16 +1,17 @@
 """
-Auto Chat Flirting Plugin - GEMINI PRO EDITION
-✅ Google Gemini (Free & Fast) Support
-✅ Config.py Compatible
-✅ Smart Context-Aware Fallback (No API needed)
+Auto Chat Flirting Plugin - STABLE CLASSIC EDITION
+✅ Ultra-Compatible with Standard Userbots
+✅ Config.py & Environment Variables Support
+✅ Smart Context-Aware Fallback Included
 """
 
 import asyncio
 import logging
 import random
+import os
 from telethon import events
 
-# Gemini Support
+# Standard Google Generative AI Library
 try:
     import google.generativeai as genai
 except ImportError:
@@ -34,29 +35,10 @@ FLIRT_SETTINGS = {
 }
 
 FLIRT_PROMPTS = {
-    "playful": """You are a flirty, playful, and witty chat bot. 
-    Respond to this message with a short, cheeky, and fun flirty reply in Hinglish (max 100 chars).
-    Keep it light-hearted and teasing. Use emojis if appropriate.
-    Message: {msg}
-    Reply:""",
-    
-    "romantic": """You are a romantic and charming chat bot.
-    Respond to this message with a sweet, romantic flirty reply in Hinglish (max 100 chars).
-    Be genuine and heartfelt. Use emojis if appropriate.
-    Message: {msg}
-    Reply:""",
-    
-    "confident": """You are a confident and bold chat bot.
-    Respond to this message with a confident and flirty reply in Hinglish (max 100 chars).
-    Be bold but respectful. Use emojis if appropriate.
-    Message: {msg}
-    Reply:""",
-    
-    "sweet": """You are a cute and sweet chat bot.
-    Respond to this message with an adorable and flirty reply in Hinglish (max 100 chars).
-    Be wholesome and kind. Use emojis if appropriate.
-    Message: {msg}
-    Reply:""",
+    "playful": "You are a flirty, playful, and witty chat bot. Respond to this message with a short, cheeky, and fun flirty reply in Hinglish (max 100 chars). Keep it light-hearted and teasing. Use emojis if appropriate. Message: {msg}\nReply:",
+    "romantic": "You are a romantic and charming chat bot. Respond to this message with a sweet, romantic flirty reply in Hinglish (max 100 chars). Be genuine and heartfelt. Use emojis if appropriate. Message: {msg}\nReply:",
+    "confident": "You are a confident and bold chat bot. Respond to this message with a confident and flirty reply in Hinglish (max 100 chars). Be bold but respectful. Use emojis if appropriate. Message: {msg}\nReply:",
+    "sweet": "You are a cute and sweet chat bot. Respond to this message with an adorable and flirty reply in Hinglish (max 100 chars). Be wholesome and kind. Use emojis if appropriate. Message: {msg}\nReply:",
 }
 
 # ------------------------ MANAGER CLASS ------------------------
@@ -67,17 +49,21 @@ class AutoFlirtManager:
         self.settings = FLIRT_SETTINGS.copy()
         self.model = None
         
-        # Pull key from Config file smoothly
-        gemini_key = getattr(Config, "GEMINI_API_KEY", None)
+        # Dual Check: Direct Env variable ya Config file dono se utha sakta hai
+        gemini_key = os.environ.get("GEMINI_API_KEY") or getattr(Config, "GEMINI_API_KEY", None)
         
         if genai and gemini_key:
-            genai.configure(api_key=gemini_key)
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+            try:
+                genai.configure(api_key=gemini_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                logger.info("✅ Gemini AI Engine successfully loaded for Auto Flirt.")
+            except Exception as e:
+                logger.error(f"Failed to configure Gemini Classic: {e}")
         else:
             logger.warning("⚠️ GEMINI_API_KEY Config file ya Env Vars me nahi mili! Fallback mode active.")
         
     async def generate_flirty_reply(self, message_text: str) -> str:
-        """Generate flirty reply using Gemini OR Smart Fallback"""
+        """Generate flirty reply using Gemini Classic OR Smart Fallback"""
         try:
             if self.model:
                 style = self.settings["style"]
@@ -136,7 +122,7 @@ async def cmd_flirt_style(event, style: str):
 async def cmd_flirt_status(event):
     all_status = "✅ ON" if flirt_manager.settings["all_users_enabled"] else "❌ OFF"
     auto_status = "✅ ON" if flirt_manager.settings["auto_reply"] else "❌ OFF"
-    api_status = "✅ Active (Gemini)" if flirt_manager.model else "⚠️ Fallback Mode"
+    api_status = "✅ Active (Gemini Engine)" if flirt_manager.model else "⚠️ Fallback Mode"
     
     status_text = f"""
 🎭 **Auto Flirt Status**
@@ -148,14 +134,14 @@ async def cmd_flirt_status(event):
 """
     await event.edit(status_text)
 
-# ------------------------ GLOBAL MANAGER VARIABLE ------------------------
+# ------------------------ GLOBAL VARIABLE ------------------------
 flirt_manager = None
 
 def init(client_instance):
     global flirt_manager
     if not flirt_manager:
         flirt_manager = AutoFlirtManager(client_instance)
-        logger.info("✅ Auto Flirt Manager Initialized via Config")
+        logger.info("✅ Auto Flirt Manager Initialized")
 
 async def register_commands():
     global flirt_manager
