@@ -10,7 +10,7 @@
 # =============================================================================
 
 import asyncio
-import google.genai as genai
+import google.generativeai as genai
 import aiohttp
 import json
 from telethon import events
