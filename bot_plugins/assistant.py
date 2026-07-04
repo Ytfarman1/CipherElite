@@ -201,9 +201,9 @@ def init_bot_plugin(bot, owner_id, owner_name):
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
             try:
-            await event.edit(text, buttons=buttons, parse_mode='html')
-        except Exception:
-            pass
+                await event.edit(text, buttons=buttons, parse_mode='html')
+            except Exception:
+                pass
         
         elif menu == "assistant":
             text = (
@@ -231,9 +231,9 @@ def init_bot_plugin(bot, owner_id, owner_name):
                 ]
             
             try:
-            await event.edit(text, buttons=buttons, parse_mode='html')
-        except Exception:
-            pass
+                await event.edit(text, buttons=buttons, parse_mode='html')
+            except Exception:
+                pass
         
         elif menu == "stats":
             stats = get_stats()
@@ -249,9 +249,9 @@ def init_bot_plugin(bot, owner_id, owner_name):
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
             try:
-            await event.edit(text, buttons=buttons, parse_mode='html')
-        except Exception:
-            pass
+                await event.edit(text, buttons=buttons, parse_mode='html')
+            except Exception:
+                pass
         
         elif menu == "settings":
             text = (
@@ -266,9 +266,9 @@ def init_bot_plugin(bot, owner_id, owner_name):
             )
             buttons = [[Button.inline("◀️ Back", b"menu_main")]]
             try:
-            await event.edit(text, buttons=buttons, parse_mode='html')
-        except Exception:
-            pass
+                await event.edit(text, buttons=buttons, parse_mode='html')
+            except Exception:
+                pass
         
         elif menu == "main":
             # Back to main menu
@@ -294,9 +294,9 @@ def init_bot_plugin(bot, owner_id, owner_name):
             ]
             
             try:
-            await event.edit(text, buttons=buttons, parse_mode='html')
-        except Exception:
-            pass
+                await event.edit(text, buttons=buttons, parse_mode='html')
+            except Exception:
+                pass
     
     # -------------------------------------------------------------------------
     # 3. ASSISTANT TOGGLE HANDLER
