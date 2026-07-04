@@ -17,6 +17,7 @@ ELITE_BOT_USERNAME = os.getenv("ELITE_BOT_USERNAME", "@NKDKOREANBOT")
 # Access Control
 SUDO_USERS = [int(x) for x in os.getenv("SUDO_USERS", "5528613826").split(",") if x.strip()]
 LOG_CHAT_ID = int(os.getenv("LOG_CHAT_ID", "0"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
 
 # Image URLs
 PMPERMIT_PIC = os.getenv("PMPERMIT_PIC", "https://files.catbox.moe/tocisn.png")  
