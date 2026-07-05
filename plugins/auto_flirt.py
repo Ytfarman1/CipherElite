@@ -68,25 +68,26 @@ class AutoFlirtManager:
             except Exception as e:
                 logger.error(f"Failed to configure Gemini: {e}")
 
-    async def generate_flirty_reply(self, message_text: str) -> str:
+    async def generate_flirty_reply(self, message_text: str):
+        """Generate a flirty reply using Gemini. Returns None (no reply sent)
+        if Gemini isn't configured or the API call fails — per request, we
+        never send a canned/fallback reply, only real AI replies."""
+        if not self._gemini_client:
+            logger.warning("Gemini not configured — skipping reply (no fallback).")
+            return None
         try:
-            if self._gemini_client:
-                style = self.settings["style"]
-                prompt = FLIRT_PROMPTS[style].format(msg=message_text)
+            style = self.settings["style"]
+            prompt = FLIRT_PROMPTS[style].format(msg=message_text)
 
-                response = await self._gemini_client.aio.models.generate_content(
-                    model=self._gemini_model_name,
-                    contents=prompt,
-                )
-                reply = (response.text or "").strip()
-                if reply:
-                    return reply[:150]
-                return self.get_smart_fallback_reply(message_text)
-            else:
-                return self.get_smart_fallback_reply(message_text)
+            response = await self._gemini_client.aio.models.generate_content(
+                model=self._gemini_model_name,
+                contents=prompt,
+            )
+            reply = (response.text or "").strip()
+            return reply[:150] if reply else None
         except Exception as e:
             logger.error(f"Error generating flirty reply: {e}")
-            return self.get_smart_fallback_reply(message_text)
+            return None
 
     def get_smart_fallback_reply(self, message_text: str) -> str:
         text = message_text.lower()
@@ -146,7 +147,6 @@ async def cmd_flirt_toggle(event):
     status = "✅ ON" if flirt_manager.settings["auto_reply"] else "❌ OFF"
     await event.edit(f"Auto Flirt: {status}")
 
-@sudo_only
 async def cmd_flirt_style(event, style: str):
     if style not in FLIRT_PROMPTS:
         await event.edit(f"❌ Invalid style! Use: {', '.join(FLIRT_PROMPTS.keys())}")
@@ -154,7 +154,6 @@ async def cmd_flirt_style(event, style: str):
     flirt_manager.settings["style"] = style
     await event.edit(f"✅ Flirt style changed to: **{style}**")
 
-@sudo_only
 async def cmd_flirt_blacklist(event, action: str, user_id: int = None):
     if action == "add" and user_id:
         if user_id not in flirt_manager.settings["blacklist"]:
@@ -171,14 +170,12 @@ async def cmd_flirt_blacklist(event, action: str, user_id: int = None):
         else:
             await event.edit("✅ Blacklist is empty")
 
-@sudo_only
 async def cmd_flirt_set_user(event, user_id: int, status: str):
     is_enabled = status.lower() == "on"
     flirt_manager.settings["whitelist"][user_id] = is_enabled
     status_text = "✅ ON" if is_enabled else "❌ OFF"
     await event.edit(f"User {user_id}: Flirt {status_text}")
 
-@sudo_only
 async def cmd_flirt_set_all(event, status: str):
     flirt_manager.settings["all_users_enabled"] = status.lower() == "on"
     status_text = "✅ ON" if flirt_manager.settings["all_users_enabled"] else "❌ OFF"
@@ -188,7 +185,6 @@ async def cmd_flirt_set_all(event, status: str):
 """
     await event.edit(info)
 
-@sudo_only
 async def cmd_flirt_delay(event, seconds: int):
     flirt_manager.settings["response_delay"] = seconds
     await event.edit(f"✅ Response delay set to {seconds} seconds")
@@ -197,7 +193,7 @@ async def cmd_flirt_delay(event, seconds: int):
 async def cmd_flirt_status(event):
     all_status = "✅ ON" if flirt_manager.settings["all_users_enabled"] else "❌ OFF"
     auto_status = "✅ ON" if flirt_manager.settings["auto_reply"] else "❌ OFF"
-    ai_status = f"🟢 Gemini AI ({flirt_manager._gemini_model_name})" if flirt_manager._gemini_client else "🟡 Smart Fallback (no API key set)"
+    ai_status = f"🟢 Gemini AI ({flirt_manager._gemini_model_name})" if flirt_manager._gemini_client else "🔴 No AI configured — bot will NOT reply until GEMINI_API_KEY is set"
     whitelist_count = len([u for u, v in flirt_manager.settings["whitelist"].items() if v])
     blacklist_count = len(flirt_manager.settings["blacklist"])
     status_text = f"""
@@ -241,6 +237,8 @@ async def register_commands():
             return
         try:
             reply = await flirt_manager.generate_flirty_reply(message_text)
+            if not reply:
+                return
             if flirt_manager.settings.get("response_delay", 0) > 0:
                 await asyncio.sleep(flirt_manager.settings["response_delay"])
             await event.respond(reply)
@@ -270,6 +268,8 @@ async def register_commands():
             return
         try:
             reply = await flirt_manager.generate_flirty_reply(message_text)
+            if not reply:
+                return
             if flirt_manager.settings.get("response_delay", 0) > 0:
                 await asyncio.sleep(flirt_manager.settings["response_delay"])
             await event.reply(reply)
@@ -283,6 +283,7 @@ async def register_commands():
     client.remove_event_handler(cmd_toggle)
     client.add_event_handler(cmd_toggle, events.NewMessage(pattern=r"\.flirttoggle$"))
 
+    @sudo_only
     async def cmd_style(event):
         style = event.pattern_match.group(1)
         await cmd_flirt_style(event, style)
@@ -293,18 +294,21 @@ async def register_commands():
     client.remove_event_handler(cmd_status)
     client.add_event_handler(cmd_status, events.NewMessage(pattern=r"\.flirtstatus$"))
 
+    @sudo_only
     async def cmd_delay(event):
         seconds = int(event.pattern_match.group(1))
         await cmd_flirt_delay(event, seconds)
     client.remove_event_handler(cmd_delay)
     client.add_event_handler(cmd_delay, events.NewMessage(pattern=r"\.flirtdelay (\d+)"))
 
+    @sudo_only
     async def cmd_setall(event):
         status = event.pattern_match.group(1)
         await cmd_flirt_set_all(event, status)
     client.remove_event_handler(cmd_setall)
     client.add_event_handler(cmd_setall, events.NewMessage(pattern=r"\.setflirtall (on|off)"))
 
+    @sudo_only
     async def cmd_setuser(event):
         user_id = int(event.pattern_match.group(1))
         status = event.pattern_match.group(2)
@@ -312,6 +316,7 @@ async def register_commands():
     client.remove_event_handler(cmd_setuser)
     client.add_event_handler(cmd_setuser, events.NewMessage(pattern=r"\.setflirtuser (\d+) (on|off)"))
 
+    @sudo_only
     async def cmd_blacklist_add(event):
         action = event.pattern_match.group(1)
         user_id = int(event.pattern_match.group(2))
@@ -319,6 +324,7 @@ async def register_commands():
     client.remove_event_handler(cmd_blacklist_add)
     client.add_event_handler(cmd_blacklist_add, events.NewMessage(pattern=r"\.flirtblacklist (add|remove) (\d+)"))
 
+    @sudo_only
     async def cmd_blacklist_list(event):
         await cmd_flirt_blacklist(event, "list")
     client.remove_event_handler(cmd_blacklist_list)
