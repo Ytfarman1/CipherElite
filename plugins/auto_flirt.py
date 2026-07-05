@@ -13,9 +13,9 @@ import random
 from telethon import events
 
 try:
-    import google.generativeai as genai
+    from google import genai as google_genai
 except ImportError:
-    genai = None
+    google_genai = None
 
 from config.config import Config
 from utils.decorators import sudo_only
@@ -59,21 +59,25 @@ class AutoFlirtManager:
     def __init__(self, client):
         self.client = client
         self.settings = FLIRT_SETTINGS.copy()
-        self._gemini_model = None
+        self._gemini_client = None
+        self._gemini_model_name = getattr(Config, "GEMINI_MODEL", None) or "gemini-2.5-flash"
 
-        if genai and hasattr(Config, "GEMINI_API_KEY") and Config.GEMINI_API_KEY:
+        if google_genai and hasattr(Config, "GEMINI_API_KEY") and Config.GEMINI_API_KEY:
             try:
-                genai.configure(api_key=Config.GEMINI_API_KEY)
-                self._gemini_model = genai.GenerativeModel("gemini-1.5-flash")
+                self._gemini_client = google_genai.Client(api_key=Config.GEMINI_API_KEY)
             except Exception as e:
                 logger.error(f"Failed to configure Gemini: {e}")
 
     async def generate_flirty_reply(self, message_text: str) -> str:
         try:
-            if self._gemini_model:
+            if self._gemini_client:
                 style = self.settings["style"]
                 prompt = FLIRT_PROMPTS[style].format(msg=message_text)
-                response = await asyncio.to_thread(self._gemini_model.generate_content, prompt)
+
+                response = await self._gemini_client.aio.models.generate_content(
+                    model=self._gemini_model_name,
+                    contents=prompt,
+                )
                 reply = (response.text or "").strip()
                 if reply:
                     return reply[:150]
@@ -193,7 +197,7 @@ async def cmd_flirt_delay(event, seconds: int):
 async def cmd_flirt_status(event):
     all_status = "✅ ON" if flirt_manager.settings["all_users_enabled"] else "❌ OFF"
     auto_status = "✅ ON" if flirt_manager.settings["auto_reply"] else "❌ OFF"
-    ai_status = "🟢 Gemini AI" if flirt_manager._gemini_model else "🟡 Smart Fallback (no API key set)"
+    ai_status = f"🟢 Gemini AI ({flirt_manager._gemini_model_name})" if flirt_manager._gemini_client else "🟡 Smart Fallback (no API key set)"
     whitelist_count = len([u for u, v in flirt_manager.settings["whitelist"].items() if v])
     blacklist_count = len(flirt_manager.settings["blacklist"])
     status_text = f"""
