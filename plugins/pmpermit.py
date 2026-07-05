@@ -16,7 +16,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-import google.genai as genai
+from google import genai
+from google.genai import types
 from telethon import events, functions
 from utils.utils import CipherElite
 from utils.decorators import rishabh
@@ -74,18 +75,16 @@ class PersonalAssistant:
             return False
 
         try:
-            genai.configure(api_key=api_key)
-            system_instruction = (
+            self.genai_client = genai.Client(api_key=api_key)
+            self.system_instruction = (
                 f"You are an AI gatekeeper named {self.data['config']['assistant_name']} "
                 f"managing the Telegram inbox for {self.data['config']['alive_name']}. "
                 "Ask the user politely why they are reaching out. "
                 "If they provide a valid reason, tell them you will notify the owner. "
                 "Keep responses strictly under 40 words."
             )
-            self.model = genai.GenerativeModel(
-                "gemini-2.0-flash",
-                system_instruction=system_instruction,
-            )
+            self.model_name = getattr(Config, "GEMINI_MODEL", None) or "gemini-2.5-flash"
+            self.model = self.genai_client  # truthy marker: AI is configured
             return True
         except Exception as e:
             logging.error(f"Failed to initialize AI Gatekeeper: {e}")
@@ -240,10 +239,13 @@ class PersonalAssistant:
         if self.model:
             # --- AI GATEKEEPER FLOW ---
             if uid not in self.ai_sessions:
-                self.ai_sessions[uid] = self.model.start_chat(history=[])
+                self.ai_sessions[uid] = self.genai_client.aio.chats.create(
+                    model=self.model_name,
+                    config=types.GenerateContentConfig(system_instruction=self.system_instruction),
+                )
             try:
                 async with event.client.action(event.chat_id, "typing"):
-                    response = await self.ai_sessions[uid].send_message_async(
+                    response = await self.ai_sessions[uid].send_message(
                         event.message.text
                     )
                 await event.reply(response.text)
