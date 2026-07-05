@@ -10,13 +10,15 @@
 # =============================================================================
 
 import asyncio
-import google.genai as genai
+from google import genai
+from google.genai import types as genai_types
 import aiohttp
 import json
 from telethon import events
 from utils.utils import CipherElite
 from utils.decorators import rishabh
 from plugins.bot import add_handler
+from config.config import Config
 from vars import ELITE_BOT_USERNAME
 
 # Store conversation history per chat
@@ -110,33 +112,34 @@ def init(client):
             if not api_key:
                 return "❌ **API Key not configured!**\n\nUse `.setai <key>` to set up Google Gemini API.\n\n🔗 Get key: https://aistudio.google.com/"
             
-            genai.configure(api_key=api_key)
-            
+            client = genai.Client(api_key=api_key)
+
             # Create enhanced system instruction with repo context
             enhanced_prompt = SYSTEM_PROMPT
             if repo_context:
                 enhanced_prompt += f"\n\n**CURRENT REPOSITORY CONTEXT:**\n{repo_context}"
-            
-            model = genai.GenerativeModel(
-                'gemini-2.0-flash',
-                system_instruction=enhanced_prompt
-            )
-            
-            # Convert messages to Gemini's native history format for better context memory
+
+            model_name = getattr(Config, "GEMINI_MODEL", None) or "gemini-2.5-flash"
+
+            # Convert messages to Gemini's native content format for better context memory
             gemini_history = []
             for msg in messages:
                 # Gemini expects roles to be 'user' or 'model'
                 role = "user" if msg["role"] == "user" else "model"
-                gemini_history.append({"role": role, "parts": [msg["content"]]})
-            
+                gemini_history.append(
+                    genai_types.Content(role=role, parts=[genai_types.Part.from_text(text=msg["content"])])
+                )
+
             # Allow complete responses and pass the properly structured history array
-            response = model.generate_content(
-                gemini_history,
-                generation_config=genai.types.GenerationConfig(
+            response = await client.aio.models.generate_content(
+                model=model_name,
+                contents=gemini_history,
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=enhanced_prompt,
                     max_output_tokens=2000,
                     temperature=0.7,
                     top_p=0.9,
-                )
+                ),
             )
             return response.text
             
